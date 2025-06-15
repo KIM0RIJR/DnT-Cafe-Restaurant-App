@@ -1,6 +1,7 @@
 package com.example.dntcafe.ui.screens
 
 import android.util.Log
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -21,86 +22,100 @@ class HomeViewModel : ViewModel() {
     val products = mutableStateListOf<ProductItem>()
     val user = mutableStateOf<User?>(null)
 
-    init {
-        checkBackend()
-        fetchCategories()
-        fetchProducts()
-        fetchUser()
-    }
+    private val _loading = mutableStateOf(true)
+    val loading: State<Boolean> get() = _loading
 
-    private fun checkBackend() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getCategories().execute()
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        Log.d("Backend", "Backend is up")
-                    } else {
-                        Log.e("Backend", "Backend error: ${response.code()} ${response.message()}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("Backend", "Failed to reach backend: ${e.message}")
+    private var dataLoaded = false // <-- this flag ensures we only load once
+
+    fun loadHomeData(forceRefresh: Boolean = false) {
+        // Skip if already loaded and not forcing refresh
+        if (dataLoaded && !forceRefresh) return
+
+        _loading.value = true
+        dataLoaded = false
+
+        var categoriesLoaded = false
+        var productsLoaded = false
+        var userLoaded = false
+
+        fun checkIfDone() {
+            if (categoriesLoaded && productsLoaded && userLoaded) {
+                _loading.value = false
+                dataLoaded = true
             }
         }
-    }
 
-    private fun fetchCategories() {
+        // Fetch categories
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = apiService.getCategories().execute()
                 if (response.isSuccessful) {
-                    response.body()?.let { dtoList ->
+                    response.body()?.let {
                         withContext(Dispatchers.Main) {
                             categories.clear()
-                            categories.addAll(dtoList)
+                            categories.addAll(it)
+                            categoriesLoaded = true
+                            checkIfDone()
                         }
                     }
                 } else {
                     Log.e("HomeViewModel", "Failed to fetch categories: ${response.code()}")
+                    categoriesLoaded = true
+                    checkIfDone()
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching categories: ${e.message}")
+                categoriesLoaded = true
+                checkIfDone()
             }
         }
-    }
 
-    private fun fetchProducts() {
+        // Fetch products
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = apiService.getProducts().execute()
                 if (response.isSuccessful) {
-                    response.body()?.let { dtoList ->
+                    response.body()?.let {
                         withContext(Dispatchers.Main) {
                             products.clear()
-                            products.addAll(dtoList)
+                            products.addAll(it)
+                            productsLoaded = true
+                            checkIfDone()
                         }
                     }
                 } else {
                     Log.e("HomeViewModel", "Failed to fetch products: ${response.code()}")
+                    productsLoaded = true
+                    checkIfDone()
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching products: ${e.message}")
+                productsLoaded = true
+                checkIfDone()
             }
         }
-    }
 
-    private fun fetchUser() {
+        // Fetch user
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Make API call to get the user info
                 val response = apiService.getUser().execute()
                 if (response.isSuccessful) {
-                    response.body()?.let { userData ->
+                    response.body()?.let {
                         withContext(Dispatchers.Main) {
-                            user.value = userData // Store the user data
+                            user.value = it
+                            userLoaded = true
+                            checkIfDone()
                         }
                     }
                 } else {
                     Log.e("HomeViewModel", "Failed to fetch user: ${response.code()}")
+                    userLoaded = true
+                    checkIfDone()
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching user: ${e.message}")
+                userLoaded = true
+                checkIfDone()
             }
         }
     }

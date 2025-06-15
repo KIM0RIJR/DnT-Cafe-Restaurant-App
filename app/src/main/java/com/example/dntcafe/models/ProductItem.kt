@@ -1,7 +1,7 @@
 package com.example.dntcafe.models
 
 data class ProductItem(
-    val category: CategoryItem,
+    val category: CategoryItem?,
     val date: String,
     val description: String,
     val featured: Boolean,
@@ -14,3 +14,4 @@ data class ProductItem(
     val updated: Any,
     val user: Int
 )
+

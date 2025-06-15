@@ -1,6 +1,5 @@
 package com.example.dntcafe.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -78,7 +76,7 @@ fun LoginScreen(
                         tint = MaterialTheme.colorScheme.primary,
                         contentDescription = null) },
                 trailingIcon = {
-                    val icon = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val icon = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
                             imageVector = icon,

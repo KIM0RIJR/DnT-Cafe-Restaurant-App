@@ -16,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.dntcafe.api.RetrofitClient
 import com.example.dntcafe.models.RegisterRequest
 import com.example.dntcafe.models.RegisterResponse
@@ -32,7 +31,8 @@ fun RegisterScreen(
 ) {
     val context = LocalContext.current
 
-    var fullName by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -56,10 +56,28 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
-            value = fullName,
-            onValueChange = { fullName = it },
-            label = { Text("Full Name") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+            value = firstName,
+            onValueChange = { firstName = it },
+            label = { Text("First Name") },
+            leadingIcon = {
+                Icon(
+                    Icons.Default.Person,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = lastName,
+            onValueChange = { lastName = it },
+            label = { Text("Last Name") },
+            leadingIcon = {
+                Icon(Icons.Default.Person,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -70,7 +88,10 @@ fun RegisterScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+            leadingIcon = {
+                Icon(Icons.Default.Email,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -82,7 +103,10 @@ fun RegisterScreen(
             value = phone,
             onValueChange = { phone = it },
             label = { Text("Mobile Number") },
-            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+            leadingIcon = {
+                Icon(Icons.Default.Phone,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -94,11 +118,15 @@ fun RegisterScreen(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            leadingIcon = {
+                Icon(Icons.Default.Lock,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        tint = MaterialTheme.colorScheme.primary,
                         contentDescription = "Toggle Password"
                     )
                 }
@@ -115,11 +143,15 @@ fun RegisterScreen(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
             label = { Text("Confirm Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            leadingIcon = {
+                Icon(Icons.Default.Lock,
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null) },
             trailingIcon = {
                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                     Icon(
-                        imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        tint = MaterialTheme.colorScheme.primary,
                         contentDescription = "Toggle Confirm Password"
                     )
                 }
@@ -135,20 +167,20 @@ fun RegisterScreen(
         Button(
             onClick = {
                 val request = RegisterRequest(
-                    full_name = fullName,
+                    first_name = firstName,
+                    last_name = lastName,
                     email = email,
                     phone = phone,
                     password = password,
-                    confirm_password = confirmPassword
+                    re_password = confirmPassword
                 )
                 RetrofitClient.instance.registerUser(request)
                     .enqueue(object : Callback<RegisterResponse> {
                         override fun onResponse(call: Call<RegisterResponse>, response: Response<RegisterResponse>) {
                             if (response.isSuccessful) {
                                 val registerResponse = response.body()
-                                val userFullName = registerResponse?.user?.full_name ?: "User"
-                                Toast.makeText(context, "Registration Successful. Welcome $userFullName", Toast.LENGTH_SHORT).show()
-                                onRegisterSuccess() // Navigate to HomeScreen
+                                val userFirstName = registerResponse?.user?.first_name ?: "User"
+                                Toast.makeText(context, "Registration Successful. Welcome $userFirstName", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "Error: ${response.errorBody()?.string()}", Toast.LENGTH_LONG).show()
                             }
