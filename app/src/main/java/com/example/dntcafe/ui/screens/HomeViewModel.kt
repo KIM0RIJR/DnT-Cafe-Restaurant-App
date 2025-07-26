@@ -1,122 +1,84 @@
 package com.example.dntcafe.ui.screens
 
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dntcafe.api.RetrofitClient
-import com.example.dntcafe.models.CategoryItem
+import com.example.dntcafe.auth.AuthManager
+import com.example.dntcafe.models.CategoryWithProducts
 import com.example.dntcafe.models.ProductItem
 import com.example.dntcafe.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class HomeViewModel : ViewModel() {
-
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
+    private val appContext = application.applicationContext
+    private val authManager = AuthManager(appContext)
     private val apiService = RetrofitClient.instance
 
-    val categories = mutableStateListOf<CategoryItem>()
+    val categories = mutableStateListOf<CategoryWithProducts>()
     val products = mutableStateListOf<ProductItem>()
     val user = mutableStateOf<User?>(null)
 
     private val _loading = mutableStateOf(true)
     val loading: State<Boolean> get() = _loading
 
-    private var dataLoaded = false // <-- this flag ensures we only load once
+    private var dataLoaded = false
 
     fun loadHomeData(forceRefresh: Boolean = false) {
-        // Skip if already loaded and not forcing refresh
+        if (!authManager.isLoggedIn()) return
         if (dataLoaded && !forceRefresh) return
 
         _loading.value = true
         dataLoaded = false
 
-        var categoriesLoaded = false
-        var productsLoaded = false
-        var userLoaded = false
-
-        fun checkIfDone() {
-            if (categoriesLoaded && productsLoaded && userLoaded) {
-                _loading.value = false
-                dataLoaded = true
-            }
-        }
-
-        // Fetch categories
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val response = apiService.getCategories().execute()
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        withContext(Dispatchers.Main) {
-                            categories.clear()
-                            categories.addAll(it)
-                            categoriesLoaded = true
-                            checkIfDone()
-                        }
-                    }
-                } else {
-                    Log.e("HomeViewModel", "Failed to fetch categories: ${response.code()}")
-                    categoriesLoaded = true
-                    checkIfDone()
-                }
-            } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error fetching categories: ${e.message}")
-                categoriesLoaded = true
-                checkIfDone()
-            }
-        }
+                val homeResponse = apiService.getHomeData()
+                val userResponse = apiService.getUser()
 
-        // Fetch products
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getProducts().execute()
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        withContext(Dispatchers.Main) {
-                            products.clear()
-                            products.addAll(it)
-                            productsLoaded = true
-                            checkIfDone()
-                        }
-                    }
-                } else {
-                    Log.e("HomeViewModel", "Failed to fetch products: ${response.code()}")
-                    productsLoaded = true
-                    checkIfDone()
-                }
-            } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error fetching products: ${e.message}")
-                productsLoaded = true
-                checkIfDone()
-            }
-        }
+                withContext(Dispatchers.Main) {
+                    if (homeResponse.isSuccessful) {
+                        val body = homeResponse.body()
+                        categories.clear()
+                        products.clear()
 
-        // Fetch user
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getUser().execute()
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        withContext(Dispatchers.Main) {
-                            user.value = it
-                            userLoaded = true
-                            checkIfDone()
+                        body?.categories?.let { categoryList ->
+                            categories.addAll(categoryList)
+                            products.addAll(categoryList.flatMap { it.products })
                         }
+                    } else {
+                        Log.e("HomeViewModel", "Home data error: ${homeResponse.code()}")
                     }
-                } else {
-                    Log.e("HomeViewModel", "Failed to fetch user: ${response.code()}")
-                    userLoaded = true
-                    checkIfDone()
+
+                    if (userResponse.isSuccessful) {
+                        user.value = userResponse.body()
+                    } else {
+                        Log.e("HomeViewModel", "User fetch failed: ${userResponse.code()}")
+                    }
+
+                    _loading.value = false
+                    dataLoaded = true
                 }
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error fetching user: ${e.message}")
-                userLoaded = true
-                checkIfDone()
+                Log.e("HomeViewModel", "Exception: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    _loading.value = false
+                }
             }
         }
+    }
+
+    fun clearData() {
+        categories.clear()
+        products.clear()
+        user.value = null
+        _loading.value = true
+        dataLoaded = false
     }
 }

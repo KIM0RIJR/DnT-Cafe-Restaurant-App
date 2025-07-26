@@ -1,9 +1,10 @@
-package com.example.dntcafe.api
+package com.example.dntcafe.auth
 
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.example.dntcafe.MainActivity
+import com.example.dntcafe.api.ApiService
 import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
@@ -13,13 +14,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class TokenAuthenticator(private val context: Context) : Authenticator {
     override fun authenticate(route: Route?, response: Response): Request? {
-        val prefs = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         val refreshToken = prefs.getString("refresh_token", null)
 
         if (refreshToken != null) {
             try {
                 val retrofit = Retrofit.Builder()
-                    .baseUrl("http://10.0.2.2:8000/api/")
+                    .baseUrl("https://restaurant-admin-panel.onrender.com/api/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
 

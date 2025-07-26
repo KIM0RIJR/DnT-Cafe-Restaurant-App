@@ -1,6 +1,7 @@
 package com.example.dntcafe.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,11 +29,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dntcafe.R
 import com.example.dntcafe.api.RetrofitClient
+import com.example.dntcafe.components.OrderSuccessDialog
 import com.example.dntcafe.models.CheckoutRequest
 import com.example.dntcafe.models.CheckoutResponse
 import com.example.dntcafe.models.MpesaRequest
@@ -59,13 +62,22 @@ fun PaymentScreen(
     cartViewModel: CartViewModel = viewModel(),
     onBackClick: () -> Unit,
     totalPrice: Double,
-    onPaymentSuccess: () -> Unit
+    onPaymentSuccess: () -> Unit,
+    currentScreenState: MutableState<String>
 ) {
     var selected by remember { mutableStateOf(true) }
     var phoneNumber by remember { mutableStateOf("") }
     val tableId = cartViewModel.selectedTable.collectAsState().value?.id
     val context = LocalContext.current
-    rememberCoroutineScope()
+    val cart by cartViewModel.cart.collectAsState()
+    var showSuccessDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        onBackClick()
+    }
+    LaunchedEffect(Unit) {
+        cartViewModel.fetchCartFromServer()
+    }
 
     Column(
         modifier = Modifier
@@ -127,9 +139,9 @@ fun PaymentScreen(
                         text = "Lipa na Mpesa",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .padding(8.dp)
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(8.dp)
                     )
 
                     RadioButton(
@@ -167,6 +179,16 @@ fun PaymentScreen(
 
         Button(
             onClick = {
+                // Check if cart is empty BEFORE payment
+                if (cart.isEmpty()) {
+                    Toast.makeText(
+                        context,
+                        "Some products are currently not available. Please check your cart again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@Button
+                }
+
                 val fullPhone = if (phoneNumber.startsWith("0")) {
                     "254" + phoneNumber.drop(1)
                 } else phoneNumber
@@ -200,6 +222,7 @@ fun PaymentScreen(
                                             "Order placed: ID ${checkout?.order_id}, Table: ${checkout?.table}",
                                             Toast.LENGTH_LONG
                                         ).show()
+                                        showSuccessDialog = true
                                         onPaymentSuccess()
                                     } else {
                                         Toast.makeText(context, "Checkout failed", Toast.LENGTH_LONG).show()
@@ -237,6 +260,15 @@ fun PaymentScreen(
                 fontWeight = FontWeight.Bold
             )
         }
+        if (showSuccessDialog) {
+            OrderSuccessDialog(
+                onDismiss = {
+                    showSuccessDialog = false
+                    currentScreenState.value = "home"  // Go to HomeScreen
+                }
+            )
+        }
+
     }
 }
 

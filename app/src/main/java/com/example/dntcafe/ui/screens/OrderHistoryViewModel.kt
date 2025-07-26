@@ -20,7 +20,7 @@ class OrderHistoryViewModel : ViewModel() {
         fetchOrders()
     }
 
-    private fun fetchOrders() {
+    fun fetchOrders() {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -34,5 +34,13 @@ class OrderHistoryViewModel : ViewModel() {
             }
         }
     }
+
+    fun clearData() {
+        _orders.value = null
+        _isLoading.value = true
+    }
 }
+
+
+
 

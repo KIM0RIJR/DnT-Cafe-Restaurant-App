@@ -19,7 +19,7 @@ class OrdersViewModel : ViewModel() {
         fetchOrders()
     }
 
-    private fun fetchOrders() {
+    fun fetchOrders() {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -27,10 +27,15 @@ class OrdersViewModel : ViewModel() {
                 _orders.value = response
             } catch (e: Exception) {
                 // Optionally handle/log error
+                _orders.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
     }
-}
 
+    fun clearData() {
+        _orders.value = emptyList()
+        _isLoading.value = true
+    }
+}

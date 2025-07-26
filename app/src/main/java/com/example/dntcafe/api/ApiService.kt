@@ -6,10 +6,12 @@ import com.example.dntcafe.models.CartOrderProductItem
 import com.example.dntcafe.models.CategoryItem
 import com.example.dntcafe.models.CheckoutRequest
 import com.example.dntcafe.models.CheckoutResponse
+import com.example.dntcafe.models.HomeResponse
 import com.example.dntcafe.models.LoginRequest
 import com.example.dntcafe.models.LoginResponse
 import com.example.dntcafe.models.MpesaRequest
 import com.example.dntcafe.models.MpesaResponse
+import com.example.dntcafe.models.PasswordResetRequest
 import com.example.dntcafe.models.ProductItem
 import com.example.dntcafe.models.RegisterRequest
 import com.example.dntcafe.models.RegisterResponse
@@ -34,6 +36,13 @@ interface ApiService {
     @POST("jwt/refresh/")
     fun refreshToken(@Body body: Map<String, String>): Call<LoginResponse>
 
+    @POST("users/reset_password/")
+    suspend fun resetPassword(@Body request: PasswordResetRequest): Response<Unit>
+
+    @GET("home/")
+    suspend fun getHomeData(): Response<HomeResponse>
+
+
     @GET("categories/")
     fun getCategories(): Call<List<CategoryItem>>
 
@@ -44,7 +53,7 @@ interface ApiService {
     suspend fun getProduct(@Path("id") id: Int): Response<ProductItem>
 
     @GET("users/me/")
-    fun getUser(): Call<User>
+    suspend fun getUser(): Response<User>
 
     @POST("mpesa/android-stk-push/")
     fun sendSTKPush(@Body body: MpesaRequest): Call<MpesaResponse>

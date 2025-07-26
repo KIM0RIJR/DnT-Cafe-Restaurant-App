@@ -1,7 +1,10 @@
 package com.example.dntcafe.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,11 +17,13 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,7 +34,10 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.dntcafe.R
 import com.example.dntcafe.models.CategoryItem
 import com.example.dntcafe.models.ProductItem
+import com.example.dntcafe.ui.theme.BlueLight
 import com.example.dntcafe.ui.theme.BluePrimary
+import com.example.dntcafe.ui.theme.BlueSecondary
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @Composable
@@ -58,22 +66,59 @@ fun Counter(count: Int, onIncrement: () -> Unit, onDecrement: () -> Unit) {
 fun HomeScreen(homeViewModel: HomeViewModel,
                cartViewModel: CartViewModel,
                onGoToCart: () -> Unit,
-               drawerState: DrawerState
+               drawerState: DrawerState,
+               onGoToSearch: () -> Unit,
+               onProductClick: (ProductItem) -> Unit
 ) {
-    val user = homeViewModel.user.value
-    val categories = homeViewModel.categories
-    val products = homeViewModel.products
     val cart by cartViewModel.cart.collectAsState()
     val cartCount = cart.values.sumOf { it.second }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        homeViewModel.loadHomeData()
-        cartViewModel.fetchCartFromServer()
+    // Double-press back to exit logic
+    var backPressedOnce by remember { mutableStateOf(false) }
+    var backPressJob by remember { mutableStateOf<Job?>(null) }
+
+    BackHandler {
+        if (backPressedOnce) {
+            // Actually exit the app by finishing the activity
+            (context as? android.app.Activity)?.finish()
+        } else {
+            backPressedOnce = true
+            Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+            // Reset flag after 2 seconds
+            backPressJob?.cancel()
+            backPressJob = coroutineScope.launch {
+                kotlinx.coroutines.delay(2000)
+                backPressedOnce = false
+            }
+        }
     }
+// Load data once on screen entry
+    val selectedCategoryId = rememberSaveable { mutableStateOf<String?>(null) }
+    val categories = homeViewModel.categories
+    val categoryWithProducts = homeViewModel.categories
     val loading by homeViewModel.loading
 
-    if (loading) {
+    val homeDataLoaded by remember {
+        derivedStateOf { categoryWithProducts.isNotEmpty() }
+    }
+
+    val user = homeViewModel.user.value
+
+    // Fetch latest products and cart on launch
+    LaunchedEffect(Unit) {
+        homeViewModel.loadHomeData(forceRefresh = true)
+        cartViewModel.fetchCartFromServer()
+    }
+
+    LaunchedEffect(categories.size) {
+        if (categories.isNotEmpty() && selectedCategoryId.value == null) {
+            selectedCategoryId.value = categories.first().cid
+        }
+    }
+
+    if (loading || !homeDataLoaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = BluePrimary)
         }
@@ -97,7 +142,9 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Hi ${user?.first_name ?: "Anonymous"}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.Search, contentDescription = null, tint = BluePrimary, modifier = Modifier.size(32.dp))
+                    IconButton(onClick = { onGoToSearch() }) { // <-- Make Search icon clickable
+                        Icon(Icons.Default.Search, contentDescription = "Search", tint = BluePrimary, modifier = Modifier.size(32.dp))
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Image(painter = painterResource(id = R.drawable.user_male), contentDescription = null, modifier = Modifier.size(36.dp))
                 }
@@ -105,6 +152,8 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Categories
+                val visibleCategories = categoryWithProducts
+
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     shape = RoundedCornerShape(16.dp),
@@ -114,8 +163,31 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Food Categories", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = BluePrimary)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            categories.forEach { CategoryItem(it) }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(24.dp)
+                        ) {
+                            visibleCategories.forEach { category ->
+                                CategoryItem(
+                                    category = CategoryItem(
+                                        id = category.id,
+                                        cid = category.cid,
+                                        image = category.image,
+                                        title = category.title,
+                                        level = 0,
+                                        lft = 0,
+                                        rght = 0,
+                                        tree_id = 0,
+                                        parent = null
+                                    ),
+                                    isSelected = selectedCategoryId.value == category.cid,
+                                    onClick = {
+                                        selectedCategoryId.value = category.cid
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -131,10 +203,19 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                         .padding(top = 8.dp, bottom = 50.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    products.forEach { product ->
-                        val cart by cartViewModel.cart.collectAsState()
+                    val selectedProducts = categoryWithProducts
+                        .find { it.cid == selectedCategoryId.value }
+                        ?.products ?: emptyList()
+
+                    selectedProducts.forEach { product ->
                         val count = cart[product.id.toString()]?.second ?: 0
-                        ProductItem(product, count, { cartViewModel.addToCart(product) }, { cartViewModel.removeFromCart(product) })
+                        ProductItem(
+                            product = product,
+                            count = count,
+                            onIncrement = { cartViewModel.addToCart(product) },
+                            onDecrement = { cartViewModel.removeFromCart(product) },
+                            onClick = { onProductClick(product) }
+                        )
                     }
                 }
             }
@@ -158,33 +239,52 @@ fun HomeScreen(homeViewModel: HomeViewModel,
 }
 
 @Composable
-fun CategoryItem(category: CategoryItem) {
+fun CategoryItem(category: CategoryItem, isSelected: Boolean, onClick: () -> Unit) {
+    val backgroundColor = if (isSelected) BlueSecondary else BlueLight
+    val textColor = Color.Black
+
     Box(
         modifier = Modifier
             .width(80.dp)
             .height(100.dp)
-            .background(Color(0xFFEAF2FF), shape = RoundedCornerShape(12.dp)),
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painter = rememberAsyncImagePainter(category.image), contentDescription = null, modifier = Modifier.size(40.dp))
+            Image(
+                painter = rememberAsyncImagePainter(category.image),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp)
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(category.title, fontSize = 12.sp)
+            Text(category.title, fontSize = 12.sp, color = textColor)
         }
     }
 }
 
 @Composable
-fun ProductItem(product: ProductItem, count: Int, onIncrement: () -> Unit, onDecrement: () -> Unit) {
+fun ProductItem(
+    product: ProductItem,
+    count: Int,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
+    onClick: () -> Unit
+)
+{
     Card(
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(
-                painter = rememberAsyncImagePainter(product.image),
+                //painter = rememberAsyncImagePainter(product.image),
+                painter = rememberAsyncImagePainter(product.thumbnail ?: product.image),
                 contentDescription = product.title,
                 modifier = Modifier
                     .size(70.dp)

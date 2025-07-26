@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dntcafe.api.RetrofitClient
+import com.example.dntcafe.components.AccountRegisteredDialog
 import com.example.dntcafe.models.RegisterRequest
 import com.example.dntcafe.models.RegisterResponse
 import com.example.dntcafe.ui.theme.BluePrimary
@@ -26,8 +27,7 @@ import retrofit2.Response
 
 @Composable
 fun RegisterScreen(
-    onBackToLoginClick: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onBackToLoginClick: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -37,9 +37,10 @@ fun RegisterScreen(
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var showAccountRegisteredDialog by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
@@ -178,9 +179,8 @@ fun RegisterScreen(
                     .enqueue(object : Callback<RegisterResponse> {
                         override fun onResponse(call: Call<RegisterResponse>, response: Response<RegisterResponse>) {
                             if (response.isSuccessful) {
-                                val registerResponse = response.body()
-                                val userFirstName = registerResponse?.user?.first_name ?: "User"
-                                Toast.makeText(context, "Registration Successful. Welcome $userFirstName", Toast.LENGTH_SHORT).show()
+                                // Show success popup instead of Toast
+                                showAccountRegisteredDialog = true
                             } else {
                                 Toast.makeText(context, "Error: ${response.errorBody()?.string()}", Toast.LENGTH_LONG).show()
                             }
@@ -190,10 +190,10 @@ fun RegisterScreen(
                             Toast.makeText(context, "Failed: ${t.message}", Toast.LENGTH_LONG).show()
                         }
                     })
-
             },
             modifier = Modifier.fillMaxWidth()
-        ) {
+        )
+        {
             Text("Create Account")
         }
 
@@ -204,6 +204,12 @@ fun RegisterScreen(
                 "Already have an account? Login",
                 modifier = Modifier.clickable { onBackToLoginClick() },
                 color = BluePrimary
+            )
+        }
+        // Show Account Registered Dialog
+        if (showAccountRegisteredDialog) {
+            AccountRegisteredDialog(
+                onDismiss = { showAccountRegisteredDialog = false }
             )
         }
     }

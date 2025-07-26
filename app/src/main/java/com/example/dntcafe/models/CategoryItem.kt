@@ -6,7 +6,7 @@ data class CategoryItem(
     val image: String,
     val level: Int,
     val lft: Int,
-    val parent: Any,
+    val parent: Any?,
     val rght: Int,
     val title: String,
     val tree_id: Int

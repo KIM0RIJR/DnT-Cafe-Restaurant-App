@@ -2,6 +2,7 @@ package com.example.dntcafe.ui.screens
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dntcafe.models.CartOrderProductItem
+import com.example.dntcafe.ui.theme.BluePrimary
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,13 +47,18 @@ fun OrdersScreen(
     val orders = viewModel.orders.value
     val isLoading = viewModel.isLoading.value
 
+    BackHandler {
+        onBackToHome()
+    }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("My Orders") },
                 navigationIcon = {
                     IconButton(onClick = { onBackToHome() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            tint = BluePrimary,
+                            contentDescription = "Back")
                     }
                 }
             )

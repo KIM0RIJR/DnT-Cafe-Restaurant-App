@@ -2,6 +2,7 @@ package com.example.dntcafe.ui.screens
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -53,13 +54,19 @@ fun OrderHistoryScreen(
     val orders = viewModel.orders.value
     val isLoading = viewModel.isLoading.value
 
+    BackHandler {
+        onBackToHome()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Orders History") },
                 navigationIcon = {
                     IconButton(onClick = onBackToHome) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            tint = BluePrimary,
+                            contentDescription = "Back")
                     }
                 }
             )

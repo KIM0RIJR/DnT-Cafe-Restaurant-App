@@ -1,5 +1,6 @@
 package com.example.dntcafe.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +64,9 @@ fun CartScreen(
     val cartCount = cart.values.sumOf { it.second }
     val selectedTable by cartViewModel.selectedTable.collectAsState()
 
+    BackHandler {
+        onBackClick()
+    }
     // Always reflect server updates
     LaunchedEffect(Unit) {
         cartViewModel.fetchCartFromServer()

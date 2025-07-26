@@ -1,6 +1,9 @@
 package com.example.dntcafe.ui.screens
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dntcafe.api.RetrofitClient
@@ -21,11 +24,16 @@ class CartViewModel : ViewModel() {
     val tables: StateFlow<List<TableItem>> = _tables
 
     private val _tableNumber = MutableStateFlow("") // Initially empty
-    val tableNumber: StateFlow<String> = _tableNumber
 
     private val _selectedTable = MutableStateFlow<TableItem?>(null)
     val selectedTable: StateFlow<TableItem?> = _selectedTable
 
+    var selectedProduct by mutableStateOf<ProductItem?>(null)
+        private set
+
+    fun updateSelectedProduct(product: ProductItem) {
+        selectedProduct = product
+    }
 
     // Map of debounce jobs for each product
     private val debounceJobs = mutableMapOf<String, Job>()
@@ -50,46 +58,9 @@ class CartViewModel : ViewModel() {
                     _tables.value = response.body() ?: emptyList()
                 }
             } catch (e: Exception) {
-                // Log or handle error
             }
         }
     }
-
-    fun updateTableNumber(tableTitle: String) {
-        _tableNumber.value = tableTitle
-        val formatted = "$tableNumber"
-        _tableNumber.value = formatted
-        Log.d("CartViewModel", "Selected table locally: $formatted")
-
-        viewModelScope.launch {
-            try {
-                val response = api.getTables()
-                if (response.isSuccessful) {
-                    val tables = response.body()
-                    val target = tables?.find { it.title == formatted }
-
-                    if (target != null) {
-                        val body = mapOf("title" to formatted)
-                        val patchResp = api.updateTableTitle(target.id.toString(), body)
-
-                        if (patchResp.isSuccessful) {
-                            Log.d("CartViewModel", "Table updated on server: ${patchResp.body()?.tid}")
-                        } else {
-                            Log.e("CartViewModel", "Failed to update table title: ${patchResp.errorBody()?.string()}")
-                        }
-                    } else {
-                        Log.e("CartViewModel", "No matching table found with title $formatted")
-                    }
-                } else {
-                    Log.e("CartViewModel", "Failed to fetch tables: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("CartViewModel", "Error updating table: ${e.message}")
-            }
-        }
-    }
-
-    fun getTableNumber(): String = _tableNumber.value
 
     fun addToCart(product: ProductItem) {
         val key = product.id.toString()
@@ -196,7 +167,9 @@ class CartViewModel : ViewModel() {
         debounceJobs[key] = viewModelScope.launch {
             delay(debounceDelay)
 
-            val cartItem = _cart.value[key]
+            // Re-read latest cart state *after* debounce
+            val currentCart = _cart.value
+            val cartItem = currentCart[key]
             val count = cartItem?.second ?: 0
             val cartItemId = cartItem?.third ?: -1
 
@@ -268,5 +241,14 @@ class CartViewModel : ViewModel() {
                 Log.e("CartViewModel", "Network error on remove by ID: $e")
             }
         }
+    }
+
+    fun clearData() {
+        _cart.value = emptyMap()
+        _tables.value = emptyList()
+        _selectedTable.value = null
+        _tableNumber.value = ""
+        debounceJobs.values.forEach { it.cancel() }
+        debounceJobs.clear()
     }
 }

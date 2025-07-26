@@ -1,6 +1,8 @@
 package com.example.dntcafe.api
 
 import android.content.Context
+import android.util.Log
+import com.example.dntcafe.auth.TokenAuthenticator
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -9,7 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8000/api/"
+    private const val BASE_URL = "https://restaurant-admin-panel.onrender.com/api/"
     private lateinit var appContext: Context
 
     fun init(context: Context) {
@@ -17,8 +19,12 @@ object RetrofitClient {
     }
 
     private fun getToken(): String? {
-        val sharedPreferences = appContext.getSharedPreferences("user_data", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("access_token", null)
+        if (!::appContext.isInitialized) {
+            Log.e("RetrofitClient", "App context not initialized!")
+            return null
+        }
+        return appContext.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            .getString("access_token", null)
     }
 
     val instance: ApiService by lazy {
@@ -32,10 +38,12 @@ object RetrofitClient {
 
             chain.proceed(requestBuilder.build())
         }
-
         val okHttpClient = OkHttpClient.Builder()
+            .connectTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor(authInterceptor)
-            .authenticator(TokenAuthenticator(appContext)) // ✅ Use the TokenAuthenticator
+            .authenticator(TokenAuthenticator(appContext))
             .build()
 
         val retrofit = Retrofit.Builder()
