@@ -52,6 +52,10 @@ import com.example.dntcafe.models.LoginRequest
 import com.example.dntcafe.ui.theme.BluePrimary
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 
 @Composable
 fun LoginScreen(
@@ -68,7 +72,18 @@ fun LoginScreen(
     var showForgotDialog by remember { mutableStateOf(false) }
     var showAccountRegisteredDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Use WindowInsets for adaptive padding
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                top = statusBarPadding,
+                bottom = navigationBarPadding
+            )
+    ) {
         BubbleDecorations()
 
         Column(

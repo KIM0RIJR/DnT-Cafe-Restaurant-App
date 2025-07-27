@@ -31,12 +31,12 @@ fun AccountRegisteredDialog(
                     tint = BluePrimary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("ACCOUNT REGISTERED", color = BluePrimary)
+                Text("ACCOUNT ACTIVATION", color = BluePrimary)
             }
         },
         text = {
             Text(
-                "Your account has been registered successfully.\n\nAn E-mail has been sent to your device. Activate it to access your account.",
+                "You need to activate your account to complete registration.\n\nAn E-mail has been sent to your device. Activate it to access your account.",
                 color = Color.DarkGray
             )
         },

@@ -31,10 +31,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.HtmlCompat
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.text.font.FontWeight
 import coil.compose.rememberAsyncImagePainter
 import com.example.dntcafe.ui.theme.BluePrimary
 
@@ -47,6 +54,11 @@ fun FoodDetailScreen(
     val product = cartViewModel.selectedProduct
     val cart = cartViewModel.cart.collectAsState().value
     val count = product?.let { cart[it.id.toString()]?.second ?: 0 } ?: 0
+
+    // Use WindowInsets to adapt for status and navigation bars
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     BackHandler {
         onBackClick()
     }
@@ -65,7 +77,12 @@ fun FoodDetailScreen(
         ) { padding ->
             Box(
                 modifier = Modifier
-                    .padding(padding)
+                    .padding(
+                        top = statusBarPadding + padding.calculateTopPadding(),
+                        bottom = navigationBarPadding + padding.calculateBottomPadding(),
+                        start = padding.calculateStartPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr),
+                        end = padding.calculateEndPadding(layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr)
+                    )
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
@@ -89,9 +106,13 @@ fun FoodDetailScreen(
     ) { padding ->
         Column(
             modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = statusBarPadding + padding.calculateTopPadding() + 16.dp,
+                    bottom = navigationBarPadding + padding.calculateBottomPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                )
+                .fillMaxSize(),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

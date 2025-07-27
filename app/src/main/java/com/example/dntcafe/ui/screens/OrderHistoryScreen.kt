@@ -5,32 +5,13 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +23,10 @@ import com.example.dntcafe.models.CartOrder
 import com.example.dntcafe.ui.theme.BluePrimary
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -54,48 +39,85 @@ fun OrderHistoryScreen(
     val orders = viewModel.orders.value
     val isLoading = viewModel.isLoading.value
 
-    BackHandler {
-        onBackToHome()
-    }
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Orders History") },
-                navigationIcon = {
-                    IconButton(onClick = onBackToHome) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
-                            tint = BluePrimary,
-                            contentDescription = "Back")
-                    }
-                }
+    BackHandler { onBackToHome() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(
+                top = statusBarPadding,
+                bottom = navigationBarPadding
             )
-        }
     ) {
-        when {
-            isLoading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            orders.isNullOrEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("You have no orders", color = Color.Gray)
-                }
-            }
-
-            else -> {
-                val sortedOrders = orders.sortedByDescending { it.order_date }
-
-                LazyColumn(
+        Column {
+            // TopBar with status bar padding already handled by parent Box
+            Surface(
+                color = Color.White,
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .padding(top = 100.dp)
-                        .padding(bottom = 16.dp)
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp)
                 ) {
-                    items(sortedOrders.size) { index ->
-                        val order = sortedOrders[index]
-                        CartOrderItem(order = order)
+                    IconButton(
+                        onClick = onBackToHome,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = BluePrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Orders History",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                        color = BluePrimary,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+            }
+
+            // Content area
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .padding(top = 4.dp, bottom = 4.dp)
+            ) {
+                when {
+                    isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) { CircularProgressIndicator() }
+                    }
+                    orders.isNullOrEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) { Text("You have no orders", color = Color.Gray) }
+                    }
+                    else -> {
+                        val sortedOrders = orders.sortedByDescending { it.order_date }
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(sortedOrders.size) { index ->
+                                val order = sortedOrders[index]
+                                CartOrderItem(order = order)
+                            }
+                        }
                     }
                 }
             }
@@ -105,18 +127,17 @@ fun OrderHistoryScreen(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CartOrderItem(order: CartOrder)
-{
+fun CartOrderItem(order: CartOrder) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal =25.dp)
+            .padding(horizontal = 8.dp)
             .padding(vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         border = BorderStroke(1.dp, Color.LightGray),
-        colors = CardDefaults.cardColors(containerColor = Color.White) // background set to white
-    ){
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = formatDateTime(order.order_date),
@@ -151,9 +172,7 @@ fun CartOrderItem(order: CartOrder)
             }
         }
     }
-
 }
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatDateTime(isoString: String): String {
@@ -166,5 +185,3 @@ fun formatDateTime(isoString: String): String {
         isoString
     }
 }
-
-

@@ -56,6 +56,10 @@ import com.example.dntcafe.models.MpesaResponse
 import com.example.dntcafe.ui.theme.BluePrimary
 import retrofit2.Call
 import retrofit2.Response
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 
 @Composable
 fun PaymentScreen(
@@ -72,6 +76,10 @@ fun PaymentScreen(
     val cart by cartViewModel.cart.collectAsState()
     var showSuccessDialog by remember { mutableStateOf(false) }
 
+    // Use WindowInsets for system bar padding
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     BackHandler {
         onBackClick()
     }
@@ -82,7 +90,12 @@ fun PaymentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(
+                top = statusBarPadding + 16.dp,
+                bottom = navigationBarPadding + 16.dp,
+                start = 16.dp,
+                end = 16.dp
+            ),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
@@ -271,8 +284,3 @@ fun PaymentScreen(
 
     }
 }
-
-
-
-
-

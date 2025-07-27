@@ -14,14 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -35,15 +29,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dntcafe.ui.theme.BluePrimary
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 
 @Composable
 fun AppDrawer(userName: String, onItemSelected: (String) -> Unit) {
+    // Get status bar and navigation bar insets
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth(0.8f)
             .background(Color.White)
-            .padding(24.dp)
+            .padding(
+                top = statusBarPadding + 24.dp,
+                bottom = navigationBarPadding + 24.dp,
+                start = 24.dp,
+                end = 24.dp
+            )
     ) {
         // Greeting Section
         Text(text = "Hello! $userName", fontSize = 20.sp, fontWeight = FontWeight.Medium)

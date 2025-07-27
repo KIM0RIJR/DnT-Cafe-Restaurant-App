@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.core.text.HtmlCompat
 import coil.compose.rememberAsyncImagePainter
@@ -51,19 +50,26 @@ fun SearchScreen(
         onBackToHome()
     }
 
+    // Use WindowInsets for safe area padding
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(
+                top = statusBarPadding,
+                bottom = navigationBarPadding
+            )
     ) {
         Column {
-            // TopBar with status bar padding using WindowInsets
+            // TopBar with status bar padding already handled by parent Column
             Surface(
                 color = Color.White,
                 shadowElevation = 4.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(WindowInsets.statusBars.asPaddingValues())
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

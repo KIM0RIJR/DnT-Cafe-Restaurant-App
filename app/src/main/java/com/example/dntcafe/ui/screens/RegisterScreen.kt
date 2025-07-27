@@ -24,6 +24,8 @@ import com.example.dntcafe.ui.theme.BluePrimary
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 
 @Composable
 fun RegisterScreen(
@@ -41,20 +43,28 @@ fun RegisterScreen(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var showAccountRegisteredDialog by remember { mutableStateOf(false) }
 
+    // Use WindowInsets for safe area padding
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(
+                top = statusBarPadding + 12.dp,
+                start = 24.dp,
+                end = 24.dp,
+                bottom = navigationBarPadding
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text("Create Account", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BluePrimary)
         Text("Enjoy Your Meal", color = Color.Gray)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = firstName,
@@ -197,7 +207,7 @@ fun RegisterScreen(
             Text("Create Account")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Row {
             Text(

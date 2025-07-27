@@ -39,6 +39,8 @@ import com.example.dntcafe.ui.theme.BluePrimary
 import com.example.dntcafe.ui.theme.BlueSecondary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 
 @Composable
 fun Counter(count: Int, onIncrement: () -> Unit, onDecrement: () -> Unit) {
@@ -63,17 +65,22 @@ fun Counter(count: Int, onIncrement: () -> Unit, onDecrement: () -> Unit) {
 }
 
 @Composable
-fun HomeScreen(homeViewModel: HomeViewModel,
-               cartViewModel: CartViewModel,
-               onGoToCart: () -> Unit,
-               drawerState: DrawerState,
-               onGoToSearch: () -> Unit,
-               onProductClick: (ProductItem) -> Unit
+fun HomeScreen(
+    homeViewModel: HomeViewModel,
+    cartViewModel: CartViewModel,
+    onGoToCart: () -> Unit,
+    drawerState: DrawerState,
+    onGoToSearch: () -> Unit,
+    onProductClick: (ProductItem) -> Unit
 ) {
     val cart by cartViewModel.cart.collectAsState()
     val cartCount = cart.values.sumOf { it.second }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Add status and navigation bar insets
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     // Double-press back to exit logic
     var backPressedOnce by remember { mutableStateOf(false) }
@@ -94,7 +101,8 @@ fun HomeScreen(homeViewModel: HomeViewModel,
             }
         }
     }
-// Load data once on screen entry
+
+    // Load data once on screen entry
     val selectedCategoryId = rememberSaveable { mutableStateOf<String?>(null) }
     val categories = homeViewModel.categories
     val categoryWithProducts = homeViewModel.categories
@@ -123,13 +131,21 @@ fun HomeScreen(homeViewModel: HomeViewModel,
             CircularProgressIndicator(color = BluePrimary)
         }
     } else {
-        // your full HomeScreen UI here...
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier
+        // HomeScreen UI with WindowInsets padding
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .padding(25.dp)) {
-
+                .padding(
+                    top = statusBarPadding + 10.dp,
+                    bottom = navigationBarPadding
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+                    .padding(horizontal = 25.dp)
+            ) {
                 // Top Bar
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
@@ -142,7 +158,7 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Hi ${user?.first_name ?: "Anonymous"}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { onGoToSearch() }) { // <-- Make Search icon clickable
+                    IconButton(onClick = { onGoToSearch() }) {
                         Icon(Icons.Default.Search, contentDescription = "Search", tint = BluePrimary, modifier = Modifier.size(32.dp))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -155,7 +171,9 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                 val visibleCategories = categoryWithProducts
 
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -196,28 +214,40 @@ fun HomeScreen(homeViewModel: HomeViewModel,
 
                 Text("Here’s what I found for you", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(top = 8.dp, bottom = 50.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                // --- Start: Make last product visible above Go to Cart button ---
+                Box(modifier = Modifier.weight(1f, fill = false)) {
+                    val scrollState = rememberScrollState()
                     val selectedProducts = categoryWithProducts
                         .find { it.cid == selectedCategoryId.value }
                         ?.products ?: emptyList()
 
-                    selectedProducts.forEach { product ->
-                        val count = cart[product.id.toString()]?.second ?: 0
-                        ProductItem(
-                            product = product,
-                            count = count,
-                            onIncrement = { cartViewModel.addToCart(product) },
-                            onDecrement = { cartViewModel.removeFromCart(product) },
-                            onClick = { onProductClick(product) }
-                        )
+                    // When cartCount changes, scroll to the end (last product) if there's a cart
+                    LaunchedEffect(cartCount) {
+                        if (cartCount > 0 && selectedProducts.isNotEmpty()) {
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .padding(top = 8.dp, bottom = 90.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        selectedProducts.forEach { product ->
+                            val count = cart[product.id.toString()]?.second ?: 0
+                            ProductItem(
+                                product = product,
+                                count = count,
+                                onIncrement = { cartViewModel.addToCart(product) },
+                                onDecrement = { cartViewModel.removeFromCart(product) },
+                                onClick = { onProductClick(product) }
+                            )
+                        }
                     }
                 }
+                // --- End: Make last product visible above Go to Cart button ---
             }
 
             // Go to Cart button
@@ -226,6 +256,7 @@ fun HomeScreen(homeViewModel: HomeViewModel,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
+                        .background(Color.White.copy(alpha = 0.9f))
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -249,17 +280,29 @@ fun CategoryItem(category: CategoryItem, isSelected: Boolean, onClick: () -> Uni
             .height(100.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .padding(8.dp), // general padding for the content
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxHeight()
+        ) {
             Image(
                 painter = rememberAsyncImagePainter(category.image),
                 contentDescription = null,
                 modifier = Modifier.size(40.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(category.title, fontSize = 12.sp, color = textColor)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                category.title,
+                fontSize = 12.sp,
+                color = textColor,
+                lineHeight = 13.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            )
         }
     }
 }
@@ -271,8 +314,7 @@ fun ProductItem(
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onClick: () -> Unit
-)
-{
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
@@ -283,7 +325,6 @@ fun ProductItem(
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(
-                //painter = rememberAsyncImagePainter(product.image),
                 painter = rememberAsyncImagePainter(product.thumbnail ?: product.image),
                 contentDescription = product.title,
                 modifier = Modifier
