@@ -126,7 +126,6 @@ class CartViewModel : ViewModel() {
 
     fun clearCart() {
         _cart.value = emptyMap()
-        // Optional: Clear server cart
     }
 
     fun fetchCartFromServer() {
@@ -192,7 +191,7 @@ class CartViewModel : ViewModel() {
         val totalPrice = priceValue * count
 
         val request = CartOrderProduct(
-            id = existingCartId,  // Important: include ID if updating
+            id = existingCartId,
             product = product.id,
             item = product.title,
             image = product.image,

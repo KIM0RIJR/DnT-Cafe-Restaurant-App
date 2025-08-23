@@ -3,7 +3,6 @@ package com.example.dntcafe
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,10 +27,10 @@ import com.example.dntcafe.session.SessionManager
 import com.example.dntcafe.ui.screens.AppDrawer
 import com.example.dntcafe.ui.screens.CartScreen
 import com.example.dntcafe.ui.screens.CartViewModel
+import com.example.dntcafe.ui.screens.FoodDetailScreen
 import com.example.dntcafe.ui.screens.HomeScreen
 import com.example.dntcafe.ui.screens.HomeViewModel
 import com.example.dntcafe.ui.screens.LoginScreen
-import com.example.dntcafe.ui.screens.FoodDetailScreen
 import com.example.dntcafe.ui.screens.OrderHistoryScreen
 import com.example.dntcafe.ui.screens.OrderHistoryViewModel
 import com.example.dntcafe.ui.screens.OrdersScreen
@@ -89,23 +89,7 @@ class MainActivity : ComponentActivity() {
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
 
-                ModalNavigationDrawer(
-                    drawerState = drawerState,
-                    drawerContent = {
-                        AppDrawer(userName = user?.first_name ?: "Anonymous") { selected ->
-                            when (selected) {
-                                "food_menu" -> currentScreenState.value = "home" // or "login", etc.
-                                "my_orders" -> currentScreenState.value = "my_orders"
-                                "orders_history" -> currentScreenState.value = "orders_history"
-                                "update_menu" -> homeViewModel.loadHomeData()
-                                "logout" -> {
-                                    sessionManager.logout()
-                                }
-                            }
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                ) {
+                val content: @Composable () -> Unit = {
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
                     ) {
@@ -144,7 +128,6 @@ class MainActivity : ComponentActivity() {
                                     cartViewModel.updateSelectedProduct(it)
                                     currentScreenState.value = "food_detail"
                                 }
-
                             )
 
                             "cart" -> CartScreen(
@@ -154,21 +137,13 @@ class MainActivity : ComponentActivity() {
                             )
 
                             "orders_history" -> {
-                                LaunchedEffect(Unit) {
-                                    orderHistoryViewModel.fetchOrders()
-                                }
-                                OrderHistoryScreen(
-                                    onBackToHome = { currentScreenState.value = "home" }
-                                )
+                                LaunchedEffect(Unit) { orderHistoryViewModel.fetchOrders() }
+                                OrderHistoryScreen(onBackToHome = { currentScreenState.value = "home" })
                             }
 
                             "my_orders" -> {
-                                LaunchedEffect(Unit) {
-                                    ordersViewModel.fetchOrders()
-                                }
-                                OrdersScreen(
-                                    onBackToHome = { currentScreenState.value = "home" }
-                                )
+                                LaunchedEffect(Unit) { ordersViewModel.fetchOrders() }
+                                OrdersScreen(onBackToHome = { currentScreenState.value = "home" })
                             }
 
                             "food_detail" -> {
@@ -182,14 +157,35 @@ class MainActivity : ComponentActivity() {
                                 totalPrice = totalPrice,
                                 onBackClick = { currentScreenState.value = "cart" },
                                 onPaymentSuccess = {
-                                    Toast.makeText(applicationContext, "Payment Successful!", Toast.LENGTH_SHORT).show()
+                                    //Toast.makeText(applicationContext, "Payment Successful!", Toast.LENGTH_SHORT).show()
                                     cartViewModel.clearCart()
-                                    //currentScreenState.value = "home"
                                 },
                                 currentScreenState = currentScreenState
                             )
                         }
                     }
+                }
+
+                if (currentScreen == "home") {
+                    ModalNavigationDrawer(
+                        drawerState = drawerState,
+                        drawerContent = {
+                            AppDrawer(userName = user?.first_name ?: "Anonymous") { selected ->
+                                when (selected) {
+                                    "food_menu" -> currentScreenState.value = "home"
+                                    "my_orders" -> currentScreenState.value = "my_orders"
+                                    "orders_history" -> currentScreenState.value = "orders_history"
+                                    "update_menu" -> homeViewModel.loadHomeData()
+                                    "logout" -> sessionManager.logout()
+                                }
+                                scope.launch { drawerState.close() }
+                            }
+                        }
+                    ) {
+                        content()
+                    }
+                } else {
+                    content()
                 }
             }
         }

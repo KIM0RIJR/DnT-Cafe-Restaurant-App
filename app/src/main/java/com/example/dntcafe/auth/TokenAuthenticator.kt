@@ -11,6 +11,7 @@ import okhttp3.Response
 import okhttp3.Route
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import androidx.core.content.edit
 
 class TokenAuthenticator(private val context: Context) : Authenticator {
     override fun authenticate(route: Route?, response: Response): Request? {
@@ -30,7 +31,7 @@ class TokenAuthenticator(private val context: Context) : Authenticator {
 
                 if (refreshResponse.isSuccessful) {
                     val newAccess = refreshResponse.body()?.access
-                    prefs.edit().putString("access_token", newAccess).apply()
+                    prefs.edit { putString("access_token", newAccess) }
 
                     return response.request.newBuilder()
                         .header("Authorization", "Bearer $newAccess")
@@ -40,10 +41,10 @@ class TokenAuthenticator(private val context: Context) : Authenticator {
                     Log.e("Authenticator", "Refresh failed with status: ${refreshResponse.code()}")
 
                     // 🧹 Clear tokens
-                    prefs.edit()
-                        .remove("access_token")
-                        .remove("refresh_token")
-                        .apply()
+                    prefs.edit {
+                        remove("access_token")
+                            .remove("refresh_token")
+                    }
 
                     // Redirect to login
                     val intent = Intent(context, MainActivity::class.java)
@@ -54,10 +55,10 @@ class TokenAuthenticator(private val context: Context) : Authenticator {
                 Log.e("Authenticator", "Exception while refreshing token: ${e.message}")
 
                 // Clean up and redirect on exception
-                prefs.edit()
-                    .remove("access_token")
-                    .remove("refresh_token")
-                    .apply()
+                prefs.edit {
+                    remove("access_token")
+                        .remove("refresh_token")
+                }
 
                 val intent = Intent(context, MainActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

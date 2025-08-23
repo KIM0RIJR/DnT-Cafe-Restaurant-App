@@ -1,7 +1,7 @@
 package com.example.dntcafe.models
 
 data class CartOrderProduct(
-    val id: Int? = null, // nullable if creating
+    val id: Int? = null,
     val product: Int,
     val item: String,
     val image: String,

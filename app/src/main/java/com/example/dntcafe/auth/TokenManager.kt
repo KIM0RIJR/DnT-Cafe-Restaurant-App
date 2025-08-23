@@ -1,6 +1,7 @@
 package com.example.dntcafe.auth
 
 import android.content.Context
+import androidx.core.content.edit
 
 object TokenManager {
     fun saveTokens(context: Context, access: String?, refresh: String?) {
@@ -11,15 +12,7 @@ object TokenManager {
         }
     }
 
-    fun getAccessToken(context: Context): String? =
-        context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-            .getString("access_token", null)
-
-    fun getRefreshToken(context: Context): String? =
-        context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-            .getString("refresh_token", null)
-
     fun clearTokens(context: Context) {
-        context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE).edit { clear() }
     }
 }

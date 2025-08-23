@@ -3,7 +3,6 @@ package com.example.dntcafe.api
 import com.example.dntcafe.models.CartOrder
 import com.example.dntcafe.models.CartOrderProduct
 import com.example.dntcafe.models.CartOrderProductItem
-import com.example.dntcafe.models.CategoryItem
 import com.example.dntcafe.models.CheckoutRequest
 import com.example.dntcafe.models.CheckoutResponse
 import com.example.dntcafe.models.HomeResponse
@@ -22,7 +21,6 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -42,12 +40,6 @@ interface ApiService {
     @GET("home/")
     suspend fun getHomeData(): Response<HomeResponse>
 
-
-    @GET("categories/")
-    fun getCategories(): Call<List<CategoryItem>>
-
-    @GET("products/")
-    fun getProducts(): Call<List<ProductItem>>
 
     @GET("products/{id}/")
     suspend fun getProduct(@Path("id") id: Int): Response<ProductItem>
@@ -78,15 +70,9 @@ interface ApiService {
     @GET("ordered-products/")
     suspend fun getOrderedProducts(): List<CartOrderProductItem>
 
-    // Sync or update table number selection (PATCH or POST as needed)
+    // Sync or update table number selection
     @GET("tables/")
     suspend fun getTables(): Response<List<TableItem>>
-
-    @PATCH("tables/{id}/")
-    suspend fun updateTableTitle(
-        @Path("id") id: String,
-        @Body body: Map<String, String>
-    ): Response<TableItem>
 
 
 }
